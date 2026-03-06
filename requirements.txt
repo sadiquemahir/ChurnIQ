@@ -1,34 +1,7 @@
-# 🔮 ChurnIQ — SaaS Churn Prediction Dashboard
-
-A full end-to-end machine learning pipeline built with Streamlit, scikit-learn, and XGBoost.
-Uses the public IBM Telco Customer Churn dataset.
-
-## Features
-- Auto-loads the IBM Telco dataset (or upload your own CSV)
-- Data cleaning & EDA with charts
-- Trains Logistic Regression, Random Forest, and XGBoost
-- Compares models with AUC-ROC, Accuracy, F1, ROC curves
-- Predicts churn probability for every customer
-- Simulate any customer profile with interactive sliders
-
-## Quick Start
-
-```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-
-# 2. Run the app
-streamlit run app.py
-```
-
-Then open http://localhost:8501 in your browser.
-
-## Deploy to Streamlit Cloud (free)
-1. Push this folder to a GitHub repo
-2. Go to https://streamlit.io/cloud
-3. Connect your repo → Deploy
-4. Get a live shareable link for your resume ✅
-
-## Dataset
-IBM Telco Customer Churn — 7,043 rows, 21 features
-https://github.com/IBM/telco-customer-churn-on-icp4d
+streamlit
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+xgboost
