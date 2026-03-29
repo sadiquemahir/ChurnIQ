@@ -97,7 +97,7 @@ docker run -p 8501:8501 -e DATABASE_URL=postgresql://... churniq
 
 ## Tests & CI
 
-**GitHub Actions** runs on every push/PR to `main`: install dependencies, `compileall` on `app.py` / `churn_utils.py`, and `pytest`.
+**GitHub Actions** runs on every push/PR to `main`: installs **`requirements-ci.txt`** (minimal deps for tests), `compileall` on `app.py` / `churn_utils.py`, and `pytest`. Full app deps stay in **`requirements.txt`** (Streamlit, Plotly, optional XGBoost/SHAP, etc.).
 
 ```bash
 pip install -r requirements.txt
@@ -113,6 +113,7 @@ pytest tests/ -q
 | `app.py` | Streamlit UI, training, evaluation, charts |
 | `churn_utils.py` | `clean_data`, persisted `LabelEncoder` helpers |
 | `tests/` | Pytest coverage for data prep and encoding |
+| `requirements-ci.txt` | Minimal deps for CI (tests only) |
 | `.github/workflows/ci.yml` | CI pipeline |
 
 ---
