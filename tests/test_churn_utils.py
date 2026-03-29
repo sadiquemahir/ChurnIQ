@@ -40,3 +40,19 @@ def test_unknown_category_falls_back():
     out = encode_row_with_encoders(row, encoders, ["cat", "n"])
     # Falls back to first class label
     assert out["cat"].iloc[0] == 0
+
+
+def test_fit_label_encoders_preserves_numeric_columns():
+    df = pd.DataFrame({"region": ["A", "B"], "amount": [10.5, 20.0]})
+    encoded, encoders = fit_label_encoders(df)
+    assert "region" in encoders
+    assert "amount" not in encoders
+    assert encoded["amount"].tolist() == [10.5, 20.0]
+    assert encoded["region"].astype(int).tolist() == [0, 1]
+
+
+def test_clean_data_coerces_numeric_churn_when_binary_strings():
+    """Binary Churn as Yes/No is the primary path; NaN churn rows become 0."""
+    df = pd.DataFrame({"Churn": ["Yes", "No"], "TotalCharges": [1.0, 2.0]})
+    out = clean_data(df)
+    assert out["Churn"].tolist() == [1, 0]
