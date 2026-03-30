@@ -118,11 +118,15 @@ docker run -p 8501:8501 -e DATABASE_URL=postgresql://... churniq
 **GitHub Actions** runs on every push/PR to `main`: installs **`requirements-ci.txt`** (minimal deps for tests), `compileall` on `app.py` / `churn_utils.py`, and `pytest`. Full app deps stay in **`requirements.txt`** (Streamlit, Plotly, optional XGBoost/SHAP, etc.).
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-ci.txt
 python -m pytest
 ```
 
-(`pyproject.toml` sets `pythonpath` so `tests/` can import `churn_utils` the same way on Windows and Linux.)
+(`pyproject.toml` sets `pythonpath` so `tests/` can import `churn_utils` the same way on Windows and Linux. For a full dev install: `pip install -r requirements-dev.txt`.)
+
+### Streamlit Community Cloud
+
+If the live app shows **“Oh no — Error running app”**, that means the process **crashed** (not a normal Streamlit message). **Check the real error** in [share.streamlit.io](https://share.streamlit.io) → your app → **⋮** → **Logs** (or **Manage app** → logs). Typical causes: wrong **main file** / **branch** / **repo** (use **`app.py`** on branch **`main`** from **`ChurnIQ`**), a **failed dependency install** on the build step, or **out-of-memory** on the first training pass. This repo caps parallel model jobs to reduce OOM on small tiers.
 
 ---
 

@@ -21,6 +21,9 @@ from sqlalchemy import create_engine, text
 
 from churn_utils import clean_data, fit_label_encoders, encode_row_with_encoders
 
+# Cap parallel BLAS / tree jobs on small cloud containers (Streamlit Cloud can OOM with n_jobs=-1)
+_N_JOBS = max(1, min(4, int(os.cpu_count() or 1)))
+
 
 def _database_url() -> Optional[str]:
     u = os.environ.get("DATABASE_URL")
@@ -790,7 +793,9 @@ def train_models(df):
     }
 
     # Random Forest
-    rf = RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42, n_jobs=-1)
+    rf = RandomForestClassifier(
+        n_estimators=200, max_depth=10, random_state=42, n_jobs=_N_JOBS
+    )
     rf.fit(X_train, y_train)
     rf_probs = rf.predict_proba(X_test)[:, 1]
     rf_preds = rf.predict(X_test)
@@ -805,8 +810,15 @@ def train_models(df):
     # XGBoost (optional)
     try:
         from xgboost import XGBClassifier
-        xgb = XGBClassifier(n_estimators=200, max_depth=6, learning_rate=0.05,
-                             eval_metric="logloss", random_state=42, verbosity=0)
+        xgb = XGBClassifier(
+            n_estimators=200,
+            max_depth=6,
+            learning_rate=0.05,
+            eval_metric="logloss",
+            random_state=42,
+            verbosity=0,
+            n_jobs=_N_JOBS,
+        )
         xgb.fit(X_train, y_train)
         xgb_probs = xgb.predict_proba(X_test)[:, 1]
         xgb_preds = xgb.predict(X_test)
@@ -843,7 +855,7 @@ def train_models(df):
     X_perm = X_test.iloc[:n_perm]
     y_perm = y_test.iloc[:n_perm]
     perm = permutation_importance(
-        rf, X_perm, y_perm, n_repeats=8, random_state=42, n_jobs=-1
+        rf, X_perm, y_perm, n_repeats=8, random_state=42, n_jobs=_N_JOBS
     )
     perm_importance = pd.Series(
         perm.importances_mean, index=X.columns
@@ -880,7 +892,7 @@ st.markdown("""
       <div class="hero-text">
         <div class="hero-title">ChurnIQ</div>
         <div class="hero-sub">churn prediction · retention intelligence</div>
-      </div>
+</div>
     </div>
     <div class="hero-chip">
       <div class="hero-orb"></div>
@@ -1102,7 +1114,7 @@ with tab2:
     st.markdown("## Exploratory Data Analysis")
     c_a, c_b = st.columns(2)
     with c_a:
-        if "MonthlyCharges" in df.columns:
+    if "MonthlyCharges" in df.columns:
             monthly_fig = go.Figure()
             monthly_fig.add_trace(go.Histogram(
                 x=df[df["Churn"] == 0]["MonthlyCharges"],
@@ -1141,7 +1153,7 @@ with tab2:
             st.caption("Each bar compares customers who stayed vs churned in the same monthly-charge range.")
 
     with c_b:
-        if "tenure" in df.columns:
+    if "tenure" in df.columns:
             tenure_fig = go.Figure()
             tenure_fig.add_trace(go.Histogram(
                 x=df[df["Churn"] == 0]["tenure"],

@@ -1,3 +1,4 @@
-# Optional: regenerate README screenshots (docs/readme/*.png)
+# Dev / docs: tests, README image export
 -r requirements.txt
 kaleido>=0.2.1
+pytest>=7.4.0
