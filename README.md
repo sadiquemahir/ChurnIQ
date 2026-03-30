@@ -10,6 +10,20 @@
 
 Public demo (when deployed): use **Streamlit Community Cloud** from this repo (`app.py` as entrypoint).
 
+### Screenshots (IBM Telco sample data)
+
+Static captures from the same pipeline as the app (hold-out test set, dark theme).
+
+| Risk distribution (test set) | ROC curves |
+|:---:|:---:|
+| ![Risk tiers](docs/readme/risk_distribution.png) | ![ROC](docs/readme/roc_curves.png) |
+
+| EDA: monthly charges | Model comparison |
+|:---:|:---:|
+| ![EDA monthly charges](docs/readme/eda_monthly_charges.png) | ![Metrics](docs/readme/metrics_table.png) |
+
+To regenerate these images after changing charts: `pip install -r requirements-dev.txt` then `python scripts/generate_readme_assets.py`.
+
 ---
 
 ## Problem → solution
@@ -120,6 +134,9 @@ python -m pytest
 | `churn_utils.py` | `clean_data`, persisted `LabelEncoder` helpers |
 | `tests/` | Pytest coverage for data prep and encoding |
 | `requirements-ci.txt` | Minimal deps for CI (tests only) |
+| `requirements-dev.txt` | Optional: kaleido + full stack to regenerate `docs/readme/*.png` |
+| `scripts/generate_readme_assets.py` | Builds README screenshots from IBM Telco CSV |
+| `docs/readme/` | PNG screenshots for README |
 | `.github/workflows/ci.yml` | CI pipeline |
 
 ---

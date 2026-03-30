@@ -1,0 +1,3 @@
+# Optional: regenerate README screenshots (docs/readme/*.png)
+-r requirements.txt
+kaleido>=0.2.1
