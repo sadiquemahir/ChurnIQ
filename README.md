@@ -173,4 +173,4 @@ Connect this GitHub repo to **[Streamlit Community Cloud](https://share.streamli
 
 ## License
 
-Add a `LICENSE` file if you open-source or share the repo publicly.
+This project is licensed under the **MIT License** — see the [`LICENSE`](LICENSE) file in the repository root. Others may use, copy, and modify the code with attribution, subject to the terms in that file.
