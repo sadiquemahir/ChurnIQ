@@ -1127,7 +1127,7 @@ with tab2:
     st.markdown("## Exploratory Data Analysis")
     c_a, c_b = st.columns(2)
     with c_a:
-    if "MonthlyCharges" in df.columns:
+        if "MonthlyCharges" in df.columns:
             monthly_fig = go.Figure()
             monthly_fig.add_trace(go.Histogram(
                 x=df[df["Churn"] == 0]["MonthlyCharges"],
@@ -1166,7 +1166,7 @@ with tab2:
             st.caption("Each bar compares customers who stayed vs churned in the same monthly-charge range.")
 
     with c_b:
-    if "tenure" in df.columns:
+        if "tenure" in df.columns:
             tenure_fig = go.Figure()
             tenure_fig.add_trace(go.Histogram(
                 x=df[df["Churn"] == 0]["tenure"],
