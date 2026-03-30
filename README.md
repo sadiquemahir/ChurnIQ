@@ -115,7 +115,7 @@ docker run -p 8501:8501 -e DATABASE_URL=postgresql://... churniq
 
 ## Tests & CI
 
-**GitHub Actions** runs on every push/PR to `main`: installs **`requirements-ci.txt`** (minimal deps for tests), `compileall` on `app.py` / `churn_utils.py`, and `pytest`. Full app deps stay in **`requirements.txt`** (Streamlit, Plotly, optional XGBoost/SHAP, etc.).
+**GitHub Actions** runs on every push/PR to `main`: installs **`requirements-ci.txt`** (minimal deps for tests), `compileall` on `app.py` / `churn_utils.py`, and `pytest`. The app’s **default** dependencies are **`requirements.txt`** (Streamlit, pandas, sklearn, Plotly, SQLAlchemy). **XGBoost + SHAP** are in **`requirements-optional.txt`** (included in **`requirements-dev.txt`** for local full setup).
 
 ```bash
 pip install -r requirements-ci.txt
@@ -126,7 +126,18 @@ python -m pytest
 
 ### Streamlit Community Cloud
 
-If the live app shows **“Oh no — Error running app”**, that means the process **crashed** (not a normal Streamlit message). **Check the real error** in [share.streamlit.io](https://share.streamlit.io) → your app → **⋮** → **Logs** (or **Manage app** → logs). Typical causes: wrong **main file** / **branch** / **repo** (use **`app.py`** on branch **`main`** from **`ChurnIQ`**), a **failed dependency install** on the build step, or **out-of-memory** on the first training pass. This repo caps parallel model jobs to reduce OOM on small tiers.
+**Deploy settings (important):**
+
+| Setting | Value |
+|--------|--------|
+| Repository | `sadiquemahir/ChurnIQ` |
+| Branch | `main` |
+| Main file | `app.py` |
+| Requirements | default `requirements.txt` at repo root (do **not** point to `requirements-dev.txt`) |
+
+After connecting GitHub, wait for the build to finish, then **Reboot app** if needed. The default `requirements.txt` is intentionally **small** so installs succeed on free tiers; XGBoost/SHAP are optional.
+
+If you still see **“Oh no — Error running app”**, open **Manage app → Logs** — the traceback there is the real cause. This repo also uses **lighter** forest/permutation settings and caps parallel jobs to reduce out-of-memory crashes.
 
 ---
 
@@ -138,7 +149,8 @@ If the live app shows **“Oh no — Error running app”**, that means the proc
 | `churn_utils.py` | `clean_data`, persisted `LabelEncoder` helpers |
 | `tests/` | Pytest coverage for data prep and encoding |
 | `requirements-ci.txt` | Minimal deps for CI (tests only) |
-| `requirements-dev.txt` | Optional: kaleido + full stack to regenerate `docs/readme/*.png` |
+| `requirements-optional.txt` | XGBoost + SHAP (optional; not used on Streamlit Cloud by default) |
+| `requirements-dev.txt` | Full local dev: core + optional + kaleido + pytest |
 | `scripts/generate_readme_assets.py` | Builds README screenshots from IBM Telco CSV |
 | `docs/readme/` | PNG screenshots for README |
 | `.github/workflows/ci.yml` | CI pipeline |

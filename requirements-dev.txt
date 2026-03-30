@@ -1,4 +1,5 @@
-# Dev / docs: tests, README image export
+# Dev / docs: full ML extras, tests, README image export
 -r requirements.txt
+-r requirements-optional.txt
 kaleido>=0.2.1
 pytest>=7.4.0

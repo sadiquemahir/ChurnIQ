@@ -1,8 +1,7 @@
+# Core stack — use this for Streamlit Community Cloud (reliable install, lower memory).
 streamlit>=1.28.0
 pandas>=1.5.0
-numpy>=1.23.0
+numpy>=1.23.0,<3
 scikit-learn>=1.2.0
 plotly>=5.18.0
 sqlalchemy>=2.0.0
-xgboost>=1.7.0
-shap>=0.44.0

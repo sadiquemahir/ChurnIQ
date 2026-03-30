@@ -792,9 +792,9 @@ def train_models(df):
         "scaled": True,
     }
 
-    # Random Forest
+    # Random Forest (moderate size — friendlier to Streamlit Cloud memory limits)
     rf = RandomForestClassifier(
-        n_estimators=200, max_depth=10, random_state=42, n_jobs=_N_JOBS
+        n_estimators=120, max_depth=9, random_state=42, n_jobs=_N_JOBS
     )
     rf.fit(X_train, y_train)
     rf_probs = rf.predict_proba(X_test)[:, 1]
@@ -811,7 +811,7 @@ def train_models(df):
     try:
         from xgboost import XGBClassifier
         xgb = XGBClassifier(
-            n_estimators=200,
+            n_estimators=120,
             max_depth=6,
             learning_rate=0.05,
             eval_metric="logloss",
@@ -850,16 +850,19 @@ def train_models(df):
         rf.feature_importances_, index=X.columns
     ).sort_values(ascending=False)
 
-    # Permutation importance (model-agnostic explainability; uses RF on test subset for speed)
-    n_perm = min(800, len(X_test))
+    # Permutation importance (expensive on small hosts — keep subset + repeats modest)
+    n_perm = min(400, len(X_test))
     X_perm = X_test.iloc[:n_perm]
     y_perm = y_test.iloc[:n_perm]
-    perm = permutation_importance(
-        rf, X_perm, y_perm, n_repeats=8, random_state=42, n_jobs=_N_JOBS
-    )
-    perm_importance = pd.Series(
-        perm.importances_mean, index=X.columns
-    ).sort_values(ascending=False)
+    try:
+        perm = permutation_importance(
+            rf, X_perm, y_perm, n_repeats=4, random_state=42, n_jobs=_N_JOBS
+        )
+        perm_importance = pd.Series(
+            perm.importances_mean, index=X.columns
+        ).sort_values(ascending=False)
+    except Exception:
+        perm_importance = feature_importance.copy()
 
     return (
         results,
@@ -968,22 +971,32 @@ if df_raw is None:
     st.stop()
 
 # Clean data
-df = clean_data(df_raw)
+try:
+    df = clean_data(df_raw)
+except Exception as e:
+    st.error("Could not prepare the dataset (cleaning step failed).")
+    st.exception(e)
+    st.stop()
 
 # Train
-with st.spinner("🤖 Training models... this takes ~15 seconds"):
-    (
-        results,
-        pred_df,
-        feat_imp,
-        best_name,
-        X_test,
-        y_test,
-        scaler,
-        feature_cols,
-        label_encoders,
-        perm_imp,
-    ) = train_models(df)
+try:
+    with st.spinner("🤖 Training models… this can take ~20–40s on cloud hosts."):
+        (
+            results,
+            pred_df,
+            feat_imp,
+            best_name,
+            X_test,
+            y_test,
+            scaler,
+            feature_cols,
+            label_encoders,
+            perm_imp,
+        ) = train_models(df)
+except Exception as e:
+    st.error("Training failed. If you’re on **Streamlit Cloud**, open **Manage app → Logs** for the full error, or run locally: `streamlit run app.py`.")
+    st.exception(e)
+    st.stop()
 
 best = results[best_name]
 
