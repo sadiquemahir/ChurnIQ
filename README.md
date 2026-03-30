@@ -1,6 +1,10 @@
 # ChurnIQ — Churn prediction dashboard
 
-[![CI](https://github.com/sadiquemahir/churn-project/actions/workflows/ci.yml/badge.svg)](https://github.com/sadiquemahir/churn-project/actions/workflows/ci.yml)
+[![CI](https://github.com/sadiquemahir/ChurnIQ/actions/workflows/ci.yml/badge.svg)](https://github.com/sadiquemahir/ChurnIQ/actions/workflows/ci.yml)
+
+<p align="center">
+  <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80" alt="Team reviewing analytics dashboards — a visual fit for churn and retention decisions" width="780" />
+</p>
 
 **ChurnIQ** is a decision-support web app for **retention and analytics teams**: it estimates churn risk from tabular customer data, compares models, and explains *which factors* drive scores so teams can prioritize outreach—not just stare at accuracy tables.
 
