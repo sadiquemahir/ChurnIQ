@@ -127,6 +127,17 @@ html, body, [class*="css"] { font-family: 'IBM Plex Mono', monospace; background
 /* Ensure app content floats above background layers */
 [data-testid="stAppViewContainer"]{ position: relative; z-index: 1; }
 
+/* Reduce default Streamlit white main area (esp. first paint / Cloud) */
+[data-testid="stAppViewContainer"] .stMain,
+[data-testid="stAppViewContainer"] .stMainBlockContainer,
+section[data-testid="stMain"] > div {
+    background: transparent !important;
+}
+[data-testid="stHeader"] {
+    background: rgba(8, 11, 18, 0.92) !important;
+    border-bottom: 1px solid rgba(99, 132, 255, 0.12);
+}
+
 @keyframes aurora{
   0%{ transform: translate3d(-1.5%, -1.0%, 0) scale(1.02); }
   50%{ transform: translate3d(1.5%, 0.8%, 0) scale(1.05); }
@@ -883,6 +894,46 @@ def risk_color(score):
     if score >= 0.35: return COLORS["medium"]
     return COLORS["low"]
 
+
+def sql_preset_on_predictions(pred_df: pd.DataFrame, preset: str) -> Optional[pd.DataFrame]:
+    """Run preset 'SQL' logic on the in-memory predictions frame (no database)."""
+    if preset == "Custom query":
+        return None
+    d = pred_df.copy().reset_index()
+    if "Customer_ID" in d.columns:
+        d = d.rename(columns={"Customer_ID": "customer_id"})
+    mapping = {
+        "Churn_Probability": "churn_probability",
+        "Risk_Level": "risk_level",
+        "Predicted_Churn": "predicted_churn",
+        "Actual_Churn": "actual_churn",
+    }
+    d = d.rename(columns={k: v for k, v in mapping.items() if k in d.columns})
+    if "risk_level" in d.columns:
+        d["risk_level"] = d["risk_level"].astype(str)
+    if preset == "Show all high risk customers":
+        return d[d["risk_level"] == "High"].head(50)
+    if preset == "Average churn probability by risk level":
+        g = (
+            d.groupby("risk_level", observed=False)["churn_probability"]
+            .agg(avg_probability="mean", total_customers="count")
+            .reset_index()
+            .sort_values("avg_probability", ascending=False)
+        )
+        return g
+    if preset == "Count of predicted vs actual churn":
+        return (
+            d.groupby(["predicted_churn", "actual_churn"])
+            .size()
+            .reset_index(name="count")
+            .sort_values(["predicted_churn", "actual_churn"])
+        )
+    if preset == "Top 10 highest risk customers":
+        keep = [c for c in ["customer_id", "churn_probability", "risk_level"] if c in d.columns]
+        return d.nlargest(10, "churn_probability")[keep]
+    return None
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  HEADER
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1144,7 +1195,8 @@ with tab2:
                 barmode="group",
                 bargap=0.18,
                 height=430,
-                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(18, 24, 40, 0.92)",
                 font=dict(color="#e6ecff", size=15),
                 legend=dict(
                     orientation="h",
@@ -1158,11 +1210,10 @@ with tab2:
                 ),
                 margin=dict(t=88, b=12, l=12, r=12),
                 hovermode="closest",
-                yaxis=dict(domain=[0.0, 0.74]),
             )
             monthly_fig.update_xaxes(title="Monthly Charges ($)", tickfont=dict(size=14), showgrid=False)
             monthly_fig.update_yaxes(title="Customers", tickfont=dict(size=14), gridcolor="rgba(159,176,211,0.22)")
-            st.plotly_chart(monthly_fig, width="stretch", config={"displayModeBar": False, "scrollZoom": False})
+            st.plotly_chart(monthly_fig, use_container_width=True, config={"displayModeBar": False, "scrollZoom": False})
             st.caption("Each bar compares customers who stayed vs churned in the same monthly-charge range.")
 
     with c_b:
@@ -1183,7 +1234,8 @@ with tab2:
                 barmode="group",
                 bargap=0.18,
                 height=430,
-                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(18, 24, 40, 0.92)",
                 font=dict(color="#e6ecff", size=15),
                 legend=dict(
                     orientation="h",
@@ -1197,11 +1249,10 @@ with tab2:
                 ),
                 margin=dict(t=88, b=12, l=12, r=12),
                 hovermode="closest",
-                yaxis=dict(domain=[0.0, 0.74]),
             )
             tenure_fig.update_xaxes(title="Tenure (months)", tickfont=dict(size=14), showgrid=False)
             tenure_fig.update_yaxes(title="Customers", tickfont=dict(size=14), gridcolor="rgba(159,176,211,0.22)")
-            st.plotly_chart(tenure_fig, width="stretch", config={"displayModeBar": False, "scrollZoom": False})
+            st.plotly_chart(tenure_fig, use_container_width=True, config={"displayModeBar": False, "scrollZoom": False})
             st.caption("Lower tenure bands usually show more churn. Longer-tenure customers are generally more stable.")
 
     numeric_cols = df.select_dtypes(include=np.number).columns
@@ -1229,7 +1280,7 @@ with tab2:
     )
     corr_fig.update_xaxes(tickfont=dict(size=13))
     corr_fig.update_yaxes(tickfont=dict(size=13))
-    st.plotly_chart(corr_fig, width="stretch", config={"displayModeBar": False, "scrollZoom": False})
+    st.plotly_chart(corr_fig, use_container_width=True, config={"displayModeBar": False, "scrollZoom": False})
 
     # Key stats
     st.markdown("---")
@@ -1640,16 +1691,24 @@ with tab5:
 # ══════════════════════════════════════════════════════════════════════════════
 with tab6:
     st.markdown("## 🗄️ SQL Explorer")
+    st.markdown(
+        """
+<div style="font-size:13px;color:#8aadcc;margin-bottom:16px;line-height:1.75;">
+<strong>What this is (simple):</strong> It lets you run <strong>SQL</strong> against a real
+<strong>database table</strong> of predictions — like a mini BI tool. You’d use this when your scores live in
+<strong>Postgres / Snowflake</strong> etc., not only in this browser session.<br><br>
+<strong>No database connected?</strong> Pick a <strong>Quick query</strong> below and click
+<strong>RUN QUERY</strong> — we’ll run the same idea on the <strong>predictions already loaded</strong> in this app
+so you can try it without setting up Postgres.
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
     if _get_engine() is None:
         st.info(
-            "Connect a database by setting **DATABASE_URL** (environment variable or "
-            "`.streamlit/secrets.toml`). See **README.md**."
+            "Optional: add **DATABASE_URL** in Streamlit **Secrets** or your host’s env vars to query a live warehouse. "
+            "Until then, **preset queries** still work using in-app predictions."
         )
-    st.markdown("""
-    <div style='font-size:12px;color:#4a6fa5;margin-bottom:24px;'>
-    Query your churn database directly using SQL.
-    </div>
-    """, unsafe_allow_html=True)
 
     # Preset queries
     st.markdown("### Quick Queries")
@@ -1681,26 +1740,48 @@ with tab6:
     )
 
     if st.button("▶ RUN QUERY"):
-        if query.strip():
+        if not query.strip():
+            st.warning("Please enter a SQL query or choose a preset.")
+        else:
             try:
-                result = load_from_db(query)
-                st.success(f"✅ Returned {len(result):,} rows")
-                if len(result) > 500:
-                    st.caption("Preview shows the first **500** rows. Use download for the full result set.")
-                plotly_dark_table(result, height=480, max_rows=500, include_index=False)
-
-                # Download results
-                csv = result.to_csv(index=False)
-                st.download_button(
-                    "⬇ Download Results CSV",
-                    csv,
-                    "query_results.csv",
-                    "text/csv"
-                )
+                if _get_engine() is not None:
+                    result = load_from_db(query)
+                    st.success(f"✅ Returned {len(result):,} rows")
+                    if len(result) > 500:
+                        st.caption(
+                            "Preview shows the first **500** rows. Use download for the full result set."
+                        )
+                    plotly_dark_table(result, height=480, max_rows=500, include_index=False)
+                    csv = result.to_csv(index=False)
+                    st.download_button(
+                        "⬇ Download Results CSV",
+                        csv,
+                        "query_results.csv",
+                        "text/csv",
+                    )
+                elif preset != "Custom query":
+                    result = sql_preset_on_predictions(pred_df, preset)
+                    if result is None or result.empty:
+                        st.warning("No rows returned for this preset.")
+                    else:
+                        st.success(
+                            f"✅ Demo (no database): **{len(result):,}** rows from in-app predictions."
+                        )
+                        plotly_dark_table(result, height=480, max_rows=500, include_index=False)
+                        csv = result.to_csv(index=False)
+                        st.download_button(
+                            "⬇ Download Results CSV",
+                            csv,
+                            "query_results.csv",
+                            "text/csv",
+                        )
+                else:
+                    st.error(
+                        "**Custom SQL** needs a connected database. Set **DATABASE_URL** in secrets, "
+                        "or choose a **Quick query** preset to demo without Postgres."
+                    )
             except Exception as e:
                 st.error(f"❌ Query error: {e}")
-        else:
-            st.warning("Please enter a SQL query")
 
     # Schema reference
     st.markdown("---")

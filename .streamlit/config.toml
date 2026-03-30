@@ -1,0 +1,11 @@
+# Dark theme for Streamlit chrome (reduces white flash on load; matches ChurnIQ CSS)
+[theme]
+base = "dark"
+primaryColor = "#2563eb"
+backgroundColor = "#0b1020"
+secondaryBackgroundColor = "#121a2e"
+textColor = "#e6ecff"
+font = "sans serif"
+
+[server]
+headless = true
