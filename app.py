@@ -1179,6 +1179,11 @@ with tab2:
     c_a, c_b = st.columns(2)
     with c_a:
         if "MonthlyCharges" in df.columns:
+            st.markdown(
+                '<p style="text-align:center;color:#e6ecff;font-size:16px;font-weight:600;'
+                'margin:0 0 10px 0;padding:0;">Monthly Charges Distribution</p>',
+                unsafe_allow_html=True,
+            )
             monthly_fig = go.Figure()
             monthly_fig.add_trace(go.Histogram(
                 x=df[df["Churn"] == 0]["MonthlyCharges"],
@@ -1191,24 +1196,24 @@ with tab2:
                 hovertemplate="Monthly: $%{x:.2f}<br>Customers: %{y}<extra>Churned</extra>"
             ))
             monthly_fig.update_layout(
-                title=dict(text="Monthly Charges Distribution", x=0.5, xanchor="center", y=0.97, yref="paper", yanchor="top", font=dict(size=16, color="#e6ecff")),
                 barmode="group",
                 bargap=0.18,
-                height=430,
+                height=420,
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(18, 24, 40, 0.92)",
                 font=dict(color="#e6ecff", size=15),
+                # Title is HTML above; legend top-right inside plot (no overlap)
                 legend=dict(
                     orientation="h",
+                    x=1,
+                    y=1,
                     xref="paper",
                     yref="paper",
-                    x=0.5,
-                    xanchor="center",
-                    y=0.88,
-                    yanchor="bottom",
+                    xanchor="right",
+                    yanchor="top",
                     font=dict(color="#e8eeff", size=13),
                 ),
-                margin=dict(t=88, b=12, l=12, r=12),
+                margin=dict(t=16, b=56, l=52, r=12),
                 hovermode="closest",
             )
             monthly_fig.update_xaxes(title="Monthly Charges ($)", tickfont=dict(size=14), showgrid=False)
@@ -1218,6 +1223,11 @@ with tab2:
 
     with c_b:
         if "tenure" in df.columns:
+            st.markdown(
+                '<p style="text-align:center;color:#e6ecff;font-size:16px;font-weight:600;'
+                'margin:0 0 10px 0;padding:0;">Tenure Distribution</p>',
+                unsafe_allow_html=True,
+            )
             tenure_fig = go.Figure()
             tenure_fig.add_trace(go.Histogram(
                 x=df[df["Churn"] == 0]["tenure"],
@@ -1230,24 +1240,23 @@ with tab2:
                 hovertemplate="Tenure: %{x} months<br>Customers: %{y}<extra>Churned</extra>"
             ))
             tenure_fig.update_layout(
-                title=dict(text="Tenure Distribution", x=0.5, xanchor="center", y=0.97, yref="paper", yanchor="top", font=dict(size=16, color="#e6ecff")),
                 barmode="group",
                 bargap=0.18,
-                height=430,
+                height=420,
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(18, 24, 40, 0.92)",
                 font=dict(color="#e6ecff", size=15),
                 legend=dict(
                     orientation="h",
+                    x=1,
+                    y=1,
                     xref="paper",
                     yref="paper",
-                    x=0.5,
-                    xanchor="center",
-                    y=0.88,
-                    yanchor="bottom",
+                    xanchor="right",
+                    yanchor="top",
                     font=dict(color="#e8eeff", size=13),
                 ),
-                margin=dict(t=88, b=12, l=12, r=12),
+                margin=dict(t=16, b=56, l=52, r=12),
                 hovermode="closest",
             )
             tenure_fig.update_xaxes(title="Tenure (months)", tickfont=dict(size=14), showgrid=False)
@@ -1731,6 +1740,29 @@ so you can try it without setting up Postgres.
             "SELECT customer_id, ROUND(churn_probability::numeric, 3) as churn_probability, risk_level FROM churn_predictions ORDER BY churn_probability DESC LIMIT 10;",
         "Custom query": ""
     }
+
+    with st.expander("Example SQL you can test (PostgreSQL, when DATABASE_URL is set)"):
+        st.markdown(
+            "With **no database**, use a **Quick query** + **RUN QUERY** above. "
+            "If you connect Postgres with a `churn_predictions` table, try:"
+        )
+        st.code(
+            """-- High-risk customers (same idea as the first preset)
+SELECT *
+FROM churn_predictions
+WHERE risk_level = 'High'
+LIMIT 50;
+
+-- Summary by risk band
+SELECT
+  risk_level,
+  COUNT(*) AS n_rows,
+  ROUND(AVG(churn_probability)::numeric, 4) AS avg_churn_prob
+FROM churn_predictions
+GROUP BY risk_level
+ORDER BY risk_level;""",
+            language="sql",
+        )
 
     # Show query in text area
     query = st.text_area(
