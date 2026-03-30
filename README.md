@@ -101,8 +101,10 @@ docker run -p 8501:8501 -e DATABASE_URL=postgresql://... churniq
 
 ```bash
 pip install -r requirements.txt
-pytest tests/ -q
+python -m pytest
 ```
+
+(`pyproject.toml` sets `pythonpath` so `tests/` can import `churn_utils` the same way on Windows and Linux.)
 
 ---
 
